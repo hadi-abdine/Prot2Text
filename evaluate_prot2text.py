@@ -9,40 +9,65 @@ from transformers.utils import logging
 from tqdm import tqdm
 import torch
 import os
+import argparse
 
+argParser = argparse.ArgumentParser()
+argParser.add_argument("--model_path", help="path to the prot2text model")
+argParser.add_argument("--data_path", help="root folder of the data")
+argParser.add_argument("--csv_path", help="csv containing the protein dataset to evaluate")
+argParser.add_argument("--split", help="train, test or eval csv?")
+argParser.add_argument("--batch_per_device", help="batch size for each device")
+argParser.add_argument("--save_results_path", help="path to save the generated description")
 
-model_name = 'gpt2'
-tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-SPECIAL_TOKEN = '<|graph_token|>'
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.pad_token = 50256
-tokenizer.add_tokens([SPECIAL_TOKEN])
-SPECIAL_TOKEN = '<|stop_token|>'
-tokenizer.add_tokens([SPECIAL_TOKEN])
-tokenizer.eos_token = '<|stop_token|>'
-tokenizer.eos_token_id = 50258
-tokenizer.bos_token_id = 50257
+# usage for single GPU
+# python prepare_dataset.py \
+#   --model_path /datadisk/Prot2Text/tmp/prot2text_base
+#   --data_path /datadisk/Prot2Text/data/dataset/ \
+#   --split test \
+#   --csv_path /datadisk/Prot2Text/data/test.csv \
+#   --batch_per_device 4 \
+#   --save_results_path /datadisk/Prot2Text/tmp_prot2text_base_new_data_code.csv
 
-model = Prot2TextModel.from_pretrained('/datadisk/GPT/Final_Code/tmp/prot2text_base')
-eval_dataset = Prot2TextDataset(root='../data/uniprot_graphs/', 
+# usage for multiple GPUs
+# python -u -m torch.distributed.run  --nproc_per_node 2 --nnodes 1 --node_rank 0 evaluate_prot2text.py \
+#     --model_path /datadisk/Prot2Text/tmp/prot2text_base \
+#     --data_path /datadisk/Prot2Text/data/dataset/ \
+#     --split test \
+#     --csv_path /datadisk/Prot2Text/data/test.csv \
+#     --batch_per_device 4 \
+#     --save_results_path /datadisk/Prot2Text/tmp_prot2text_base_new_data_code.csv
+
+args = argParser.parse_args()
+
+tokenizer = GPT2Tokenizer.from_pretrained(args.model_path)
+
+model = Prot2TextModel.from_pretrained(args.model_path)
+eval_dataset = Prot2TextDataset(root=args.data_path, 
                                 tokenizer=tokenizer, 
-                                file_path="/datadisk/GPT/data/csvs/uniprot_sprot_all_functions_test_40split_cleaned.csv", 
+                                file_path=args.csv_path, 
                                 block_size=256, 
-                                split='test')
+                                split=args.split)
 print('eval set loaded')
 
-batch_size = 4
+batch_size = int(args.batch_per_device)
 model.eval()
 bleu = evaluate.load("bleu")
+rouge = evaluate.load("rouge")
+bert_score = evaluate.load("bertscore")
 
-args = Seq2SeqTrainingArguments(output_dir='./', per_device_eval_batch_size=batch_size)
-trainer = Prot2TextTrainer(model=model, args=args, eval_dataset=eval_dataset)
+args_seq = Seq2SeqTrainingArguments(output_dir='./', per_device_eval_batch_size=batch_size)
+trainer = Prot2TextTrainer(model=model, args=args_seq, eval_dataset=eval_dataset)
 
-# d = DataLoader(eval_dataset, batch_size=batch_size, collate_fn=None, shuffle = False)
 d = trainer.get_eval_dataloader()
+
+if torch.distributed.get_rank()==0:
+    if os.path.exists(args.save_results_path):
+        os.remove(args.save_results_path)
+        
 names = list()
 generated = list()
 functions = list()
+
 for inputs in tqdm(d):
     inputs = inputs.to_dict()
     inputs['edge_type'] =  torch.cat([torch.tensor(inputs['edge_type'][i]) for i in range(len(inputs['edge_type']))], dim=0)
@@ -54,22 +79,30 @@ for inputs in tqdm(d):
     inputs['decoder_input_ids'] = inputs['decoder_input_ids'][:,0:1]
     inputs["decoder_attention_mask"] = torch.ones(inputs['decoder_input_ids'].shape[0], 1)
     inputs = {k: v.to(device=torch.cuda.current_device(), non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-    # model.to(torch.cuda.current_device())
     encoder_state = model(**inputs, get_graph_emb=True).detach()
     for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids']:
                 inputs.pop(key)
     tok_ids = model.decoder.generate(input_ids=inputs['decoder_input_ids'],
-                                    #  attention_mask=inputs["decoder_attention_mask"],
                                      encoder_outputs=encoder_state,
                                      use_cache=True)
     generated += tokenizer.batch_decode(tok_ids, skip_special_tokens=True)
-    # print(generated)
 
 data= {'name':names, 'generated': generated, 'function':functions}
 df = pd.DataFrame(data)
-filename = 'tmp_prot2text_base_old_config.csv'
-filepath = os.path.join(os.getcwd(), filename)
-df.to_csv(filepath, index=False, mode='a')
+df.to_csv(args.save_results_path, index=False, mode='a')
+  
+torch.distributed.barrier() 
+if torch.distributed.get_rank() > 0:
+    exit(0)   
+res = pd.read_csv(args.save_results_path).drop_duplicates()
+res = res.drop(res[res['name'] == 'name'].index)   
 
-res = bleu.compute(predictions=generated, references=functions)
-print(res)
+res_bleu = bleu.compute(predictions=res['generated'].tolist(), references=res['function'].tolist())
+res_rouge = rouge.compute(predictions=res['generated'].tolist(), references=res['function'].tolist())
+res_bertscore = bert_score.compute(predictions=res['generated'].tolist(), references=res['function'].tolist(),
+                                  model_type="dmis-lab/biobert-large-cased-v1.1", num_layers=24)
+print(res_bleu)
+print(res_rouge)
+def Average(lst):
+    return sum(lst) / len(lst)
+print('Bert Score: ', Average(res_bertscore['f1']))

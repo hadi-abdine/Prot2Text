@@ -151,8 +151,8 @@ class PDB2Graph():
     
 def download_alphafold_structure(
     uniprot_id: str,
-    version: int = 4,
-    out_dir: str = "/datastore2/pdb/"
+    out_dir: str,
+    version: int = 4
     ):
     
     BASE_URL = "https://alphafold.ebi.ac.uk/files/"
@@ -165,6 +165,7 @@ def download_alphafold_structure(
     try:
         structure_filename = wget.download(query_url, out=out_dir)
     except:
+        print('Error.. could not download: ', f"AF-{uniprot_id}-F1-model_v{version}.pdb")
         return None
     return structure_filename
 

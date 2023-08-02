@@ -81,8 +81,8 @@ class Prot2TextDataset(Dataset):
                 function = '<|graph_token|> '+self.uniprot_csv.loc[self.uniprot_csv['accession'] == self.files_names[i].split("-")[1]]["function"].values[0]+' <|stop_token|> '
                 sequence = self.uniprot_csv.loc[self.uniprot_csv['accession'] == self.files_names[i].split("-")[1]]["sequence"].values[0]
                 
-                text = self.tokenizer([function], add_special_tokens=True, truncation=True, max_length=self.block_size, padding='max_length', return_tensors="pt") #(1, max_length)
-                seq = self.esmtokenizer([sequence], add_special_tokens=True, truncation=True, max_length=1021, padding='max_length', return_tensors="pt") #(1, max_length)
+                text = self.tokenizer([function], add_special_tokens=True, truncation=True, max_length=self.block_size, padding='max_length', return_tensors="pt") 
+                seq = self.esmtokenizer([sequence], add_special_tokens=True, truncation=True, max_length=1021, padding='max_length', return_tensors="pt")
                 
                 graph.encoder_input_ids = seq['input_ids'] 
                 graph.attention_mask = seq['attention_mask']

@@ -24,6 +24,18 @@ from transformers.deepspeed import is_deepspeed_zero3_enabled
 from transformers.trainer_utils import PredictionOutput
 from transformers.utils import logging
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP
+import argparse
+
+# argParser = argparse.ArgumentParser()
+# argParser.add_argument("--model_path", help="path to the prot2text model")
+# argParser.add_argument("--data_path", help="root folder of the data")
+# argParser.add_argument("--csv_path", help="csv containing the protein dataset to evaluate")
+# argParser.add_argument("--split", help="train, test or eval csv?")
+# argParser.add_argument("--batch_per_device", help="batch size for each device")
+# argParser.add_argument("--save_results_path", help="path to save the generated description")
+
+# args = argParser.parse_args()
+
 
 model_name = 'gpt2'
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
@@ -76,47 +88,45 @@ gpt_config = GPT2Config.from_pretrained(config_model.gpt_model_name,
 gpt_config.max_new_tokens = 256
 config_model.gpt_config = gpt_config.to_dict()
 
-
-class Prot2TextModelTrain(Prot2TextModel):
-  def __init__(self, config):
-    super().__init__(config)
+# class Prot2TextModelTrain(Prot2TextModel):
+#   def __init__(self, config):
+#     super().__init__(config)
     
-    self.gpt_config = GPT2Config.from_dict(config.gpt_config)
-    if config.rgcn:
-        self.encoder = EncoderRGCN(input_dim=config.rgcn_input_dim, hidden_dim=self.gpt_config.n_embd, n_layers=config.rgcn_n_layers, emb_dim=self.gpt_config.n_embd)
+#     self.gpt_config = GPT2Config.from_dict(config.gpt_config)
+#     if config.rgcn:
+#         self.encoder = EncoderRGCN(input_dim=config.rgcn_input_dim, hidden_dim=self.gpt_config.n_embd, n_layers=config.rgcn_n_layers, emb_dim=self.gpt_config.n_embd)
 
-    self.decoder = _GPT2LMHeadModel.from_pretrained(config.gpt_model_name, add_cross_attention=True, use_cache=False)
+#     self.decoder = _GPT2LMHeadModel.from_pretrained(config.gpt_model_name, add_cross_attention=True, use_cache=False)
 
-    if config.esm:
-        self.esm_config = PretrainedConfig.from_dict(config.esm_config)
-        self.esm = transformers.EsmModel.from_pretrained(config.esm_model_name)
-        self.to_embedding = nn.Linear(self.esm_config.hidden_size, self.gpt_config.n_embd)
-        if config.cross_esm_graph and config.rgcn:
-            self.h = nn.ModuleList([CABlock(self.gpt_config,  layer_idx=i) for i in range(4)])
-            self.ln_f = nn.LayerNorm(self.gpt_config.n_embd, eps=self.gpt_config.layer_norm_epsilon)
+#     if config.esm:
+#         self.esm_config = PretrainedConfig.from_dict(config.esm_config)
+#         self.esm = transformers.EsmModel.from_pretrained(config.esm_model_name)
+#         self.to_embedding = nn.Linear(self.esm_config.hidden_size, self.gpt_config.n_embd)
+#         if config.cross_esm_graph and config.rgcn:
+#             self.h = nn.ModuleList([CABlock(self.gpt_config,  layer_idx=i) for i in range(4)])
+#             self.ln_f = nn.LayerNorm(self.gpt_config.n_embd, eps=self.gpt_config.layer_norm_epsilon)
         
-    self.config = config
+#     self.config = config
     
-    print('number of parameters: ', self.decoder.num_parameters())
-    a = self.decoder.get_input_embeddings()
-    b = self.decoder.get_output_embeddings()
+#     print('number of parameters: ', self.decoder.num_parameters())
+#     a = self.decoder.get_input_embeddings()
+#     b = self.decoder.get_output_embeddings()
 
-    my_new_token_embedding = torch.randn(2, a.embedding_dim)
-    a.weight = torch.nn.Parameter(torch.cat((a.weight, my_new_token_embedding.clone()), dim=0))
-    b.weight = torch.nn.Parameter(torch.cat((b.weight, my_new_token_embedding.clone()), dim=0))
+#     my_new_token_embedding = torch.randn(2, a.embedding_dim)
+#     a.weight = torch.nn.Parameter(torch.cat((a.weight, my_new_token_embedding.clone()), dim=0))
+#     b.weight = torch.nn.Parameter(torch.cat((b.weight, my_new_token_embedding.clone()), dim=0))
     
-    # Update the vocabulary size
-    a.num_embeddings += 2
-    b.out_features += 2
-    self.decoder.set_input_embeddings(a)
-    self.decoder.set_output_embeddings(b)
-    self.decoder.resize_token_embeddings(len(tokenizer))
-    print('number of parameters: ', self.decoder.num_parameters())
+#     # Update the vocabulary size
+#     a.num_embeddings += 2
+#     b.out_features += 2
+#     self.decoder.set_input_embeddings(a)
+#     self.decoder.set_output_embeddings(b)
+#     self.decoder.resize_token_embeddings(len(tokenizer))
+#     print('number of parameters: ', self.decoder.num_parameters())
     
-    self.post_init()
+#     self.post_init()
 
 
-# model = Prot2TextModelTrain(config=config)
 model = Prot2TextModel(config=config)
 model.warm_up(gpt_model='gpt2', esm_model="facebook/esm2_t12_35M_UR50D")
 
@@ -134,6 +144,18 @@ warmup = 0.06 * num_epochs * train_size / (num_gpus * batch_size * grad_accumula
 model_save_name = '../models/model_Prot2Text_Base/'
 lr = 2e-4
 
+# bleu = evaluate.load("bleu")
+# def compute_metrics(pred):
+#     labels_ids = pred.label_ids
+#     pred_ids = pred.predictions
+
+#     pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+#     labels_ids[labels_ids == -100] = tokenizer.eos_token_id
+#     label_str = tokenizer.batch_decode(labels_ids, skip_special_tokens=True)
+    
+#     data= {'generated': pred_str, 'function':label_str}
+#     res = bleu.compute(predictions=pred_str, references=label_str)
+#     return {'eval_bleu': res['bleu']}
 
 training_args = Seq2SeqTrainingArguments(
     output_dir=model_save_name,
@@ -159,6 +181,7 @@ training_args = Seq2SeqTrainingArguments(
     # metric_for_best_model='eval_bleu',
     # greater_is_better=True,
     # predict_with_generate=True,
+    # load_best_model_at_end=True,
     # fp16=True, # did not work
     # world_size=1,
     # do_predict = True,
@@ -173,6 +196,11 @@ trainer = Prot2TextTrainer(
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     tokenizer=tokenizer,
+    #compute_metrics=compute_metrics,
 )
 
 trainer.train()
+
+# if torch.distributed.get_rank()==0:
+#     model.save_pretrained('')
+#     tokenizer.save_pretrained('')
