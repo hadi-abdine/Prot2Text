@@ -2,7 +2,7 @@ from transformers import GPT2Config, AutoConfig, AutoTokenizer, GPT2Config
 from transformers import GPT2LMHeadModel, GPT2Model, PretrainedConfig, PreTrainedModel
 import transformers
 from .Encoder import EncoderRGCN
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Callable
 import torch
 import torch.nn as nn
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -11,6 +11,9 @@ from transformers.modeling_utils import PreTrainedModel, PretrainedConfig
 from .utils import CABlock, _GPT2LMHeadModel
 import os
 import sys
+from transformers.generation.configuration_utils import GenerationConfig
+from transformers.generation.logits_process import LogitsProcessorList
+from transformers.generation.stopping_criteria import StoppingCriteriaList
 sys.path.append('../prot2text_dataset')
 from prot2text_dataset.pdb2graph import PDB2Graph, download_alphafold_structure
 from prot2text_dataset.graphs import *
@@ -68,6 +71,7 @@ class Prot2TextModel(PreTrainedModel):
         if gpt_model is not None:    
             self.decoder = _GPT2LMHeadModel.from_pretrained(gpt_model, add_cross_attention=True, use_cache=False)
             self.decoder.resize_token_embeddings(self.gpt_config.vocab_size)
+            self.decoder.config = self.gpt_config
                 
         
     def forward(self,
@@ -159,7 +163,7 @@ class Prot2TextModel(PreTrainedModel):
         
         return transformer_outputs
     
-        
+    @torch.no_grad()    
     def generate_protein_description(self,
                                     protein_pdbID=None, 
                                     protein_sequence=None,
@@ -267,4 +271,35 @@ class Prot2TextModel(PreTrainedModel):
             generated = tokenizer.batch_decode(self.decoder.generate(input_ids=inputs['decoder_input_ids'], encoder_outputs=encoder_state, use_cache=True), skip_special_tokens=True)
             
             return generated[0].replace('<|stop_token|>', '').replace('<|graph_token|>', '')
-             
+    
+    @torch.no_grad()
+    def generate(self,
+                inputs: Optional[torch.Tensor] = None,
+                generation_config: Optional[GenerationConfig] = None,
+                logits_processor: Optional[LogitsProcessorList] = None,
+                stopping_criteria: Optional[StoppingCriteriaList] = None,
+                prefix_allowed_tokens_fn: Optional[Callable[[int, torch.Tensor], List[int]]] = None,
+                synced_gpus: Optional[bool] = None,
+                assistant_model: Optional["PreTrainedModel"] = None,
+                streamer: Optional["BaseStreamer"] = None,
+                **kwargs,
+            ):
+
+        encoder_state = self(**kwargs, get_graph_emb=True)
+        input_ids = kwargs['decoder_input_ids']
+        attention_mask = kwargs['decoder_attention_mask']
+        for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids', 'decoder_input_ids', 'decoder_attention_mask', 'batch', 'attention_mask', 'max_length',
+                    'num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates', 'ptr']:
+            if key in kwargs.keys():
+                kwargs.pop(key)
+        return self.decoder.generate(input_ids=input_ids,
+                                     generation_config=generation_config,
+                                     logits_processor=logits_processor,
+                                     stopping_criteria=stopping_criteria,
+                                     prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
+                                     synced_gpus=synced_gpus,
+                                     assistant_model=assistant_model,
+                                     streamer=streamer,
+                                     encoder_outputs=encoder_state,
+                                     **kwargs
+                                     )

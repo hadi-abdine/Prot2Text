@@ -8,6 +8,7 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 import torch
 from torch_geometric.data import Dataset
+from transformers.deepspeed import is_deepspeed_zero3_enabled
 
 class _GPT2LMHeadModel(GPT2LMHeadModel):
     def _init_(self, config):

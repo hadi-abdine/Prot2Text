@@ -2,6 +2,7 @@ from transformers import GPT2Tokenizer, Seq2SeqTrainingArguments
 from prot2text_dataset.torch_geometric_loader import Prot2TextDataset
 from prot2text_model.utils import Prot2TextTrainer
 from prot2text_model.Model import Prot2TextModel
+from prot2text_model.tokenization_prot2text import Prot2TextTokenizer
 import evaluate
 from torch_geometric.loader import DataLoader
 import pandas as pd
@@ -39,7 +40,7 @@ argParser.add_argument("--save_results_path", help="path to save the generated d
 
 args = argParser.parse_args()
 
-tokenizer = GPT2Tokenizer.from_pretrained(args.model_path)
+tokenizer = Prot2TextTokenizer.from_pretrained(args.model_path)
 
 model = Prot2TextModel.from_pretrained(args.model_path)
 eval_dataset = Prot2TextDataset(root=args.data_path, 
@@ -74,17 +75,16 @@ for inputs in tqdm(d):
     inputs['edge_type'] = torch.argmax(inputs['edge_type'], dim=1)
     names +=  inputs['name']
     functions +=  tokenizer.batch_decode(inputs['decoder_input_ids'], skip_special_tokens=True)
-    for key in ['num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates', 'ptr']:
-        inputs.pop(key)
     inputs['decoder_input_ids'] = inputs['decoder_input_ids'][:,0:1]
     inputs["decoder_attention_mask"] = torch.ones(inputs['decoder_input_ids'].shape[0], 1)
     inputs = {k: v.to(device=torch.cuda.current_device(), non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-    encoder_state = model(**inputs, get_graph_emb=True).detach()
-    for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids']:
-                inputs.pop(key)
-    tok_ids = model.decoder.generate(input_ids=inputs['decoder_input_ids'],
-                                     encoder_outputs=encoder_state,
-                                     use_cache=True)
+    # encoder_state = model(**inputs, get_graph_emb=True).detach()
+    # for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids']:
+    #             inputs.pop(key)
+    # tok_ids = model.decoder.generate(input_ids=inputs['decoder_input_ids'],
+    #                                  encoder_outputs=encoder_state,
+    #                                  use_cache=True)
+    tok_ids = model.generate(inputs=None, **inputs)
     generated += tokenizer.batch_decode(tok_ids, skip_special_tokens=True)
 
 data= {'name':names, 'generated': generated, 'function':functions}
