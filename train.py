@@ -205,5 +205,5 @@ trainer = Prot2TextTrainer(
 trainer.train()
 
 if torch.distributed.get_rank()==0:
-    model.save_pretrained(os.path.join(model_save_name,'/model/'))
-    tokenizer.save_pretrained(os.path.join(model_save_name,'/model/'))
+    model.save_pretrained(os.path.join(model_save_name,'model/'))
+    tokenizer.save_pretrained(os.path.join(model_save_name,'model/'))
