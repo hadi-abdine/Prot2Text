@@ -176,14 +176,20 @@ class Prot2TextModel(PreTrainedModel):
         
         if self.config.esm and not self.config.rgcn and protein_sequence==None:
             raise ValueError(
-                "The model you are trying to use is based only on protein sequence, please provide one using protein_sequence"
+                "The model you are trying to use is based only on protein sequence, please provide an amino-acid protein_sequence"
             )
         if self.config.rgcn and protein_pdbID==None and (x==None or edge_index==None or edge_type==None):
             raise ValueError(
-                "The model you are trying to use is based protein structure, please provide  a AlphaFold ID (you have to have internet connection using protein_pdbID, or provide the triplet inputs: x (node features), edge_index and edge_type"
+                "The model you are trying to use is based on protein structure, please provide a AlphaFold ID (you must have to have internet connection using protein_pdbID, or provide the triplet inputs: x (node features), edge_index and edge_type"
             )
         if self.config.esm:
             esmtokenizer = AutoTokenizer.from_pretrained(self.config.esm_model_name)
+        
+        if protein_pdbID==None and protein_sequence==None:
+            raise ValueError(
+                "you need to provide either a protein AlphaFold Id or an amino-acid sequence"
+            )
+            
         if protein_pdbID!=None:
             config = {"node_metadata_functions": [amino_acid_one_hot, 
                                                 expasy_protein_scale,
