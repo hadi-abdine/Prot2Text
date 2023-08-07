@@ -37,15 +37,57 @@ argParser.add_argument("--use_rgcn", action='store_true', help="True or False. (
 argParser.add_argument("--warmup_esm", action='store_true', help="True or False.")
 argParser.add_argument("--warmup_gpt", action='store_true', help="True or False.")
 argParser.add_argument("--data_path", type=str, default='./data//dataset/', help="root folder of the data")
-argParser.add_argument("--train_csv_path", type=str, default='./data/test.csv', help="csv containing the protein dataset for training")# change default to train
-argParser.add_argument("--eval_csv_path", type=str, default='./data/test.csv', help="csv containing the protein dataset for evaluation")# change default to eval
+argParser.add_argument("--train_csv_path", type=str, default='./data/train.csv', help="csv containing the protein dataset for training")
+argParser.add_argument("--eval_csv_path", type=str, default='./data/eval.csv', help="csv containing the protein dataset for evaluation")
 argParser.add_argument("--batch_per_device", type=int, default=4, help="batch size for each device")
-argParser.add_argument("--nb_epochs", type=int, default=20, help="number of epochs")
-argParser.add_argument("--nb_gpus", type=int, default=2, help="number of GPUs")
+argParser.add_argument("--nb_epochs", type=int, default=25, help="number of epochs")
+argParser.add_argument("--nb_gpus", type=int, default=1, help="number of GPUs")
 argParser.add_argument("--gradient_accumulation", default=1, help="gradient accumuluation")
 argParser.add_argument("--lr", type=float, default=2e-4, help="learning rate")
 argParser.add_argument("--save_model_path", type=str, default='./models/model_test/', help="path to save the model and the checkpoints")
 argParser.add_argument("--bleu_evaluation", action='store_true', help="True or False")
+
+# usage for single GPU:
+# python prepare_dataset.py \
+#   --decoder_path gpt2 \
+#   --esm_model_path facebook/esm2_t12_35M_UR50D \
+#   --use_plm \
+#   --use_rgcn \
+#   --warmup_esm \
+#   --warmup_gpt \    
+#   --split test \
+#   --data_path ./data//dataset/ \
+#   --train_csv_path ./data/train.csv \
+#   --eval_csv_path ./data/eval.csv \    
+#   --batch_per_device 4 \
+#   --nb_epochs 25 \
+#   --nb_gpus 1 \
+#   --gradient_accumulation 64 \ 
+#   --lr 2e-4 \ 
+#   --save_model_path ./models/prot2text_base/ \
+#   --bleu_evaluation \
+    
+
+# usage for multiple GPUs:
+# python -u -m torch.distributed.run  --nproc_per_node <number of gpus> --nnodes <number of nodes> --node_rank 0 evaluate_prot2text.py \
+#   --decoder_path gpt2 \
+#   --esm_model_path facebook/esm2_t12_35M_UR50D \
+#   --use_plm \
+#   --use_rgcn \
+#   --warmup_esm \
+#   --warmup_gpt \    
+#   --split test \
+#   --data_path ./data//dataset/ \
+#   --train_csv_path ./data/train.csv \
+#   --eval_csv_path ./data/eval.csv \    
+#   --batch_per_device 4 \
+#   --nb_epochs 25 \
+#   --nb_gpus <number of gpus> \
+#   --gradient_accumulation 1 \ 
+#   --lr 2e-4 \ 
+#   --save_model_path ./models/prot2text_base/ \
+#   --bleu_evaluation \
+
 
 args = argParser.parse_args()
 
@@ -204,6 +246,10 @@ trainer = Prot2TextTrainer(
 
 trainer.train()
 
-if torch.distributed.get_rank()==0:
-    model.save_pretrained(os.path.join(model_save_name,'model/'))
-    tokenizer.save_pretrained(os.path.join(model_save_name,'model/'))
+if torch.distributed.is_initialized():
+    if torch.distributed.get_rank()==0:
+        model.save_pretrained(os.path.join(model_save_name,'model/'))
+        tokenizer.save_pretrained(os.path.join(model_save_name,'model/'))
+    else:
+        model.save_pretrained(os.path.join(model_save_name,'model/'))
+        tokenizer.save_pretrained(os.path.join(model_save_name,'model/'))

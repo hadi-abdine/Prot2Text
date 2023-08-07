@@ -20,23 +20,23 @@ argParser.add_argument("--split", help="train, test or eval csv?")
 argParser.add_argument("--batch_per_device", help="batch size for each device")
 argParser.add_argument("--save_results_path", help="path to save the generated description")
 
-# usage for single GPU
+# usage for single GPU:
 # python prepare_dataset.py \
-#   --model_path /datadisk/Prot2Text/tmp/prot2text_base
-#   --data_path /datadisk/Prot2Text/data/dataset/ \
+#   --model_path ./models/prot2text_base \
+#   --data_path ./data/dataset/ \
 #   --split test \
-#   --csv_path /datadisk/Prot2Text/data/test.csv \
+#   --csv_path ./data/test.csv \
 #   --batch_per_device 4 \
-#   --save_results_path /datadisk/Prot2Text/tmp_prot2text_base_new_data_code.csv
+#   --save_results_path ./results/prot2text_base_results.csv
 
-# usage for multiple GPUs
-# python -u -m torch.distributed.run  --nproc_per_node 2 --nnodes 1 --node_rank 0 evaluate_prot2text.py \
-#     --model_path /datadisk/Prot2Text/tmp/prot2text_base \
-#     --data_path /datadisk/Prot2Text/data/dataset/ \
-#     --split test \
-#     --csv_path /datadisk/Prot2Text/data/test.csv \
-#     --batch_per_device 4 \
-#     --save_results_path /datadisk/Prot2Text/tmp_prot2text_base_new_data_code.csv
+# usage for multiple GPUs:
+# python -u -m torch.distributed.run  --nproc_per_node <number of gpus> --nnodes <number of nodes> --node_rank 0 evaluate_prot2text.py \
+#   --model_path ./models/prot2text_base \
+#   --data_path ./data/dataset/ \
+#   --split test \
+#   --csv_path ./data/test.csv \
+#   --batch_per_device 4 \
+#   --save_results_path ./results/prot2text_base_results.csv
 
 args = argParser.parse_args()
 
@@ -61,7 +61,11 @@ trainer = Prot2TextTrainer(model=model, args=args_seq, eval_dataset=eval_dataset
 
 d = trainer.get_eval_dataloader()
 
-if torch.distributed.get_rank()==0:
+if torch.distributed.is_initialized():
+    if torch.distributed.get_rank()==0:
+        if os.path.exists(args.save_results_path):
+            os.remove(args.save_results_path)
+else:
     if os.path.exists(args.save_results_path):
         os.remove(args.save_results_path)
         
@@ -78,22 +82,17 @@ for inputs in tqdm(d):
     inputs['decoder_input_ids'] = inputs['decoder_input_ids'][:,0:1]
     inputs["decoder_attention_mask"] = torch.ones(inputs['decoder_input_ids'].shape[0], 1)
     inputs = {k: v.to(device=torch.cuda.current_device(), non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-    # encoder_state = model(**inputs, get_graph_emb=True).detach()
-    # for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids']:
-    #             inputs.pop(key)
-    # tok_ids = model.decoder.generate(input_ids=inputs['decoder_input_ids'],
-    #                                  encoder_outputs=encoder_state,
-    #                                  use_cache=True)
     tok_ids = model.generate(inputs=None, **inputs)
     generated += tokenizer.batch_decode(tok_ids, skip_special_tokens=True)
 
 data= {'name':names, 'generated': generated, 'function':functions}
 df = pd.DataFrame(data)
 df.to_csv(args.save_results_path, index=False, mode='a')
-  
-torch.distributed.barrier() 
-if torch.distributed.get_rank() > 0:
-    exit(0)   
+
+if torch.distributed.is_initialized():  
+    torch.distributed.barrier() 
+    if torch.distributed.get_rank() > 0:
+        exit(0)   
 res = pd.read_csv(args.save_results_path).drop_duplicates()
 res = res.drop(res[res['name'] == 'name'].index)   
 

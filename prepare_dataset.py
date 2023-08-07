@@ -29,13 +29,12 @@ argParser.add_argument("--decoder_model", help="language model to use (from hugg
 
 # usage:
 # python prepare_dataset.py \
-#   --data_save_path data/dataset/ \
-#   --split test --csv_path data/test.csv \
+#   --data_save_path ./data/dataset/ \
+#   --split test --csv_path ./data/test.csv \
 #   --plm_model facebook/esm2_t12_35M_UR50D \
 #   --decoder_model gpt2
 
 args = argParser.parse_args()
-
 
 # step 1: download the PDB files from AlphaFoldDB
 isExist = os.path.exists(os.path.join(args.data_save_path, args.split))
