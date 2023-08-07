@@ -27,7 +27,7 @@ pip install -r Requirements.txt
 
 #### Datasets Download
 |  Dataset |  Size | Link  |
-|---|---|---|---|---|
+|----------|-------|-------|
 |  Train | 248 315  |  [Download]() | 
 |  Validation |  4 172  | [Download]()  | 
 | Test  | 4 203  | [Download]()  | 
