@@ -21,7 +21,7 @@ argParser.add_argument("--batch_per_device", help="batch size for each device")
 argParser.add_argument("--save_results_path", help="path to save the generated description")
 
 # usage for single GPU:
-# python prepare_dataset.py \
+# python evaluate_prot2text.py \
 #   --model_path ./models/prot2text_base \
 #   --data_path ./data/dataset/ \
 #   --split test \

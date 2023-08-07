@@ -48,7 +48,7 @@ argParser.add_argument("--save_model_path", type=str, default='./models/model_te
 argParser.add_argument("--bleu_evaluation", action='store_true', help="True or False")
 
 # usage for single GPU:
-# python prepare_dataset.py \
+# python train.py \
 #   --decoder_path gpt2 \
 #   --esm_model_path facebook/esm2_t12_35M_UR50D \
 #   --use_plm \
@@ -69,7 +69,7 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
     
 
 # usage for multiple GPUs:
-# python -u -m torch.distributed.run  --nproc_per_node <number of gpus> --nnodes <number of nodes> --node_rank 0 evaluate_prot2text.py \
+# python -u -m torch.distributed.run  --nproc_per_node <number of gpus> --nnodes <number of nodes> --node_rank 0 train.py \
 #   --decoder_path gpt2 \
 #   --esm_model_path facebook/esm2_t12_35M_UR50D \
 #   --use_plm \
