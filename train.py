@@ -55,7 +55,6 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
 #   --use_rgcn \
 #   --warmup_esm \
 #   --warmup_gpt \    
-#   --split test \
 #   --data_path ./data//dataset/ \
 #   --train_csv_path ./data/train.csv \
 #   --eval_csv_path ./data/eval.csv \    
@@ -76,7 +75,6 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
 #   --use_rgcn \
 #   --warmup_esm \
 #   --warmup_gpt \    
-#   --split test \
 #   --data_path ./data//dataset/ \
 #   --train_csv_path ./data/train.csv \
 #   --eval_csv_path ./data/eval.csv \    
