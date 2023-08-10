@@ -8,7 +8,7 @@
 
 This repository contains the code to reporoduce the results of the paper "Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers" by Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis. [https://arxiv.org/abs/2307.14367]
 
-A demo web app for protein description generation could be also tested here [nlp.polytechnique.fr/prot2text#proteins](nlp.polytechnique.fr/prot2text#proteins)
+A demo web app for protein description generation could be also tested here [nlp.polytechnique.fr/prot2text](http://nlp.polytechnique.fr/prot2text#proteins)
 
 ## Setup
 #### Environment Setup
