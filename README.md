@@ -59,7 +59,7 @@ where:
 |:--------------------------:|:--------:|:-----------:|:-----------:|:------------:|
 |  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download]()  (coming soon) | 
 |  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download]()  (coming soon) | 
-|  Prot2Text<sub>LARGE</sub> |  398M    |    36.51    |    84.83    | [Download]()  (coming soon) | 
+|  Prot2Text<sub>MEDIUM</sub> |  398M    |    36.51    |    84.83    | [Download]()  (coming soon) | 
 |  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download]()  (coming soon) | 
 
 #### Protein Description Generation
