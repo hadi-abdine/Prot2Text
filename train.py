@@ -30,8 +30,8 @@ import os
 import argparse
 
 argParser = argparse.ArgumentParser()
-argParser.add_argument("--decoder_path", type=str, default='gpt2', help="path to the gpt2 model to use (hugging face). options: gpt2, gpt2-medium, gpt2-large..")
-argParser.add_argument("--esm_model_path", type=str, default='facebook/esm2_t12_35M_UR50D', help="path to esm model to use. example: facebook/esm2_t12_35M_UR50D")
+argParser.add_argument("--decoder_path", type=str, help="path to the gpt2 model to use (hugging face). options: gpt2, gpt2-medium, gpt2-large..")
+argParser.add_argument("--esm_model_path", type=str, help="path to esm model to use. example: facebook/esm2_t12_35M_UR50D")
 argParser.add_argument("--use_plm", action='store_true', help="True or False. (use or not protein language model in the encoder)")
 argParser.add_argument("--use_rgcn", action='store_true', help="True or False. (use or not RGCN in the encoder)")
 argParser.add_argument("--warmup_esm", action='store_true', help="True or False.")
@@ -40,7 +40,7 @@ argParser.add_argument("--data_path", type=str, default='./data//dataset/', help
 argParser.add_argument("--train_csv_path", type=str, default='./data/train.csv', help="csv containing the protein dataset for training")
 argParser.add_argument("--eval_csv_path", type=str, default='./data/eval.csv', help="csv containing the protein dataset for evaluation")
 argParser.add_argument("--batch_per_device", type=int, default=4, help="batch size for each device")
-argParser.add_argument("--nb_epochs", type=int, default=25, help="number of epochs")
+argParser.add_argument("--nb_epochs", type=int, default=1, help="number of epochs")
 argParser.add_argument("--nb_gpus", type=int, default=1, help="number of GPUs")
 argParser.add_argument("--gradient_accumulation", default=1, help="gradient accumuluation")
 argParser.add_argument("--lr", type=float, default=2e-4, help="learning rate")
@@ -55,7 +55,7 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
 #   --use_rgcn \
 #   --warmup_esm \
 #   --warmup_gpt \    
-#   --data_path ./data//dataset/ \
+#   --data_path ./data/dataset/ \
 #   --train_csv_path ./data/train.csv \
 #   --eval_csv_path ./data/eval.csv \    
 #   --batch_per_device 4 \
@@ -75,7 +75,7 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
 #   --use_rgcn \
 #   --warmup_esm \
 #   --warmup_gpt \    
-#   --data_path ./data//dataset/ \
+#   --data_path ./data/dataset/ \
 #   --train_csv_path ./data/train.csv \
 #   --eval_csv_path ./data/eval.csv \    
 #   --batch_per_device 4 \
@@ -86,8 +86,24 @@ argParser.add_argument("--bleu_evaluation", action='store_true', help="True or F
 #   --save_model_path ./models/prot2text_base/ \
 #   --bleu_evaluation \
 
-
 args = argParser.parse_args()
+
+if args.decoder_path is None:
+    raise ValueError(
+            "You need to specify a GPT like model path that is compatible with Hugging Face. Please pass the path of a Hugging Face decoder model using --decoder_path."
+            )
+if args.use_plm and args.esm_model_path is None:
+    raise ValueError(
+            "You want to use protein language model in the encoder, however you did not specify any PLM path.  Please pass the path of a Hugging Face PLM using --esm_model_path."
+            )
+if not args.use_plm and not args.use_rgcn:
+    raise ValueError(
+            "You did not choose which type of encoder to use. Please set --use_plm to train a PLM encoder, --use_rgcn for an RGCN encoder or both for Prot2Text architecture."
+            )
+if not args.use_plm and args.warmup_esm:
+    raise ValueError(
+            "You chose to warmup the protein language model however you chose not to use a PLM in the encoder. Please remove --warmup_esm or use --use_plm and specify a PLM using --esm_model_path."
+            )    
 
 model_name = args.decoder_path
 tokenizer = Prot2TextTokenizer.from_pretrained(model_name)
@@ -153,14 +169,14 @@ train_dataset = Prot2TextDataset(root=args.data_path,
                                  tokenizer=tokenizer,
                                  file_path=args.train_csv_path,
                                  block_size=256,
-                                 split='test',#change to train
+                                 split='train',
                                  esmtokenizer=esm_tokenizer)
 print('train set loaded')
 eval_dataset = Prot2TextDataset(root=args.data_path,
                                 tokenizer=tokenizer,
                                 file_path=args.eval_csv_path,
                                 block_size=256,
-                                split='test',#change to eval
+                                split='eval',
                                 esmtokenizer=esm_tokenizer)
 print('eval set loaded')
 
