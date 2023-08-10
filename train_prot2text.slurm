@@ -14,8 +14,11 @@ export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=9901
 
 srun --jobid $SLURM_JOBID bash -c 'python -u -m torch.distributed.run \
-         --nproc_per_node $GPUS_PER_NODE --nnodes $SLURM_NNODES --node_rank $SLURM_PROCID \
-          --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
+          --nproc_per_node $GPUS_PER_NODE \
+          --nnodes $SLURM_NNODES \
+          --node_rank $SLURM_PROCID \
+          --master_addr $MASTER_ADDR \
+          --master_port $MASTER_PORT \
           train.py \
              --decoder_path gpt2 \
              --esm_model_path facebook/esm2_t12_35M_UR50D \
@@ -23,7 +26,6 @@ srun --jobid $SLURM_JOBID bash -c 'python -u -m torch.distributed.run \
              --use_rgcn \
              --warmup_esm \
              --warmup_gpt \    
-             --split test \
              --data_path ./data//dataset/ \
              --train_csv_path ./data/train.csv \
              --eval_csv_path ./data/eval.csv \    
