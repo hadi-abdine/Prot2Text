@@ -1,6 +1,5 @@
 # Prot2Text
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
-
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
 
 [cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
@@ -29,11 +28,11 @@ pip install -r Requirements.txt
 ```
 
 #### Datasets Preparation
-|  Dataset |  Size | Link  |
-|----------|-------|-------|
-|  Train | 248 315  |  [Download]() (coming soon) | 
+|   Dataset   |  Size   |     Link     |
+|:-----------:|:-------:|:------------:|
+|  Train      | 248 315 | [Download]() (coming soon)  | 
 |  Validation |  4 172  | [Download]() (coming soon)  | 
-| Test  | 4 203  | [Download]() (coming soon)  |
+| Test        |  4 203  | [Download]() (coming soon)  |
 
 After downloading the CSV file for each split, the PDB files will be downloaded from AlphaFoldDB and then preprocessed to extract the graph, the tokenized amino-acid sequence and the tokenized protein descrition for each PDB file.
 Example for the test split:
@@ -55,11 +54,11 @@ where:
 
 ## Models
 
-|  Model                     |  #params |  BLEU Score |  BERT Score | Link         |
+|  Model                     |  #params |  BLEU Score |  BERT Score |     Link     |
 |:--------------------------:|:--------:|:-----------:|:-----------:|:------------:|
 |  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download]()  (coming soon) | 
 |  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download]()  (coming soon) | 
-|  Prot2Text<sub>MEDIUM</sub> |  398M    |    36.51    |    84.83    | [Download]()  (coming soon) | 
+|  Prot2Text<sub>MEDIUM</sub>|  398M    |    36.51    |    84.83    | [Download]()  (coming soon) | 
 |  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download]()  (coming soon) | 
 
 #### Protein Description Generation
