@@ -1,4 +1,5 @@
-# Prot2Text
+# Prot2Text: Multimodal Protein’s Function Generation with GNNs and Transformers
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-red.svg)](#python)
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
 
@@ -6,21 +7,25 @@
 [cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
-This repository contains the code to reporoduce the results of the paper "Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers" by Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis. [https://arxiv.org/abs/2307.14367]
+This repository contains the code to reproduce the results of the paper "<strong>Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers</strong>" by <strong>Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis</strong>, accepted at <strong>AAAI 2024</strong>. [Preprint Link](https://arxiv.org/abs/2307.14367)
 
-A demo web app for protein description generation could be also tested here [nlp.polytechnique.fr/prot2text](http://nlp.polytechnique.fr/prot2text#proteins)
+Preliminary versions of the paper were accepted as a spotlight at [DGM4H@NeurIPS 2023](https://sites.google.com/ethz.ch/dgm4h-neurips2023/home?authuser=0) and [AI4Science@NeurIPS 2023](https://ai4sciencecommunity.github.io/neurips23.html). 
+
+A demo web app for protein description generation could also be tested here [nlp.polytechnique.fr/prot2text](http://nlp.polytechnique.fr/prot2text#proteins).
+
+![](Prot2Text.drawio.png)
 
 ## Setup
 #### Environment Setup
 
-Recommended environment is Python >= 3.8 and PyTorch 1.13, although other versions of Python and PyTorch may also work.
+The recommended environment is Python >= 3.8 and PyTorch 1.13, although other versions of Python and PyTorch may also work.
 
 To prepare the environment we need to do the following steps:
 1- Install pytorch 1.13.*, pytorch-geometric and its optional dependencies according to your cuda version using the following links:
 - pytorch: [https://pytorch.org/get-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
 - pytorch-geometric and its optional dependencies: [https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html)
 
-2- Install the DSSP library following the insctructions here: [https://ssbio.readthedocs.io/en/latest/instructions/dssp.html](https://ssbio.readthedocs.io/en/latest/instructions/dssp.html)
+2- Install the DSSP library following the instructions here: [https://ssbio.readthedocs.io/en/latest/instructions/dssp.html](https://ssbio.readthedocs.io/en/latest/instructions/dssp.html)
 
 3- Install the rest of the requirements:
 ```bash
@@ -34,7 +39,7 @@ pip install -r Requirements.txt
 |  Validation |  4 172  | [Download]() (coming soon)  | 
 | Test        |  4 203  | [Download]() (coming soon)  |
 
-After downloading the CSV file for each split, the PDB files will be downloaded from AlphaFoldDB and then preprocessed to extract the graph, the tokenized amino-acid sequence and the tokenized protein descrition for each PDB file.
+After downloading the CSV file for each split, the PDB files will be downloaded from AlphaFoldDB and then preprocessed to extract the graph, the tokenized amino-acid sequence and the tokenized protein description for each PDB file.
 Example for the test split:
 
 ```bash
@@ -47,9 +52,9 @@ python prepare_dataset.py \
 ```
 where:
 * `--data_save_path`: the path for the folder where the PDB files will be downloaded from AlphaFold and the graphs alongside the tokenized text sequence and the amino-acid sequence will be stored.
-* `--split`: specify which split to preprocess (`train`, `eval` or `test`).
+* `--split`: specify which split to preprocess (`train`, `eval`, or `test`).
 * `--csv_path`: the path to a CSV file downloaded from the previous table.
-* `--plm_model`: the HuggingFace protein language model path (used for amino-acid sequnce tokenization).
+* `--plm_model`: the HuggingFace protein language model path (used for amino-acid sequence tokenization).
 * `--decoder_model`:  the HuggingFace decoder model path (GPT-like model) (used for natural text tokenization).
 
 ## Models
@@ -62,7 +67,7 @@ where:
 |  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download]()  (coming soon) | 
 
 #### Protein Description Generation
-To generate the description of a protein using any Prot2Text model (using `--model_path`) you need to specify the protein AlphaFoldDB ID (using `--protein_alphafold_id`) and have an inernet connection in order to download the structure:
+To generate the description of a protein using any Prot2Text model (using `--model_path`) you need to specify the protein AlphaFoldDB ID (using `--protein_alphafold_id`) and have an internet connection in order to download the structure:
 ```
 python generate_description.py \
   --model_path ./models/prot2text_base \
@@ -110,7 +115,7 @@ where:
 * `--batch_per_device`: the batch size to be used on each GPU.
 * `--nb_epochs`: the number of training epochs.
 * `--nb_gpus`: the total number of GPUs used during the training (to compute the warming up steps).
-* `--gradient_accumulation`: the gradient accumulation steps required to perfom the optimization step.
+* `--gradient_accumulation`: the gradient accumulation steps required to perform the optimization step.
 * `--lr`: the learning rate to be used.
 * `--save_model_path`: the path to save the model.
 * `--bleu_evaluation`: if used, the model selection will be based on the best BLEU score on the validation dataset, otherwise the CLM (causal language modeling) loss will be used for model selection.
