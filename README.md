@@ -35,9 +35,9 @@ pip install -r Requirements.txt
 #### Datasets Preparation
 |   Dataset   |  Size   |     Link     |
 |:-----------:|:-------:|:------------:|
-|  Train      | 248 315 | [Download]() (coming soon)  | 
-|  Validation |  4 172  | [Download]() (coming soon)  | 
-| Test        |  4 203  | [Download]() (coming soon)  |
+|  Train      | 248 315 | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJswGT00GA0GnGjkA?e=VVf5xv) | 
+|  Validation |  4 172  | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJtAemPRrPipxX-tg?e=IHvJYd) | 
+| Test        |  4 203  | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJrPdyteHb4LX3HjA?e=SH3UUa) |
 
 After downloading the CSV file for each split, the PDB files will be downloaded from AlphaFoldDB and then preprocessed to extract the graph, the tokenized amino-acid sequence and the tokenized protein description for each PDB file.
 Example for the test split:
@@ -61,10 +61,11 @@ where:
 
 |  Model                     |  #params |  BLEU Score |  BERT Score |     Link     |
 |:--------------------------:|:--------:|:-----------:|:-----------:|:------------:|
-|  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download]()  (coming soon) | 
-|  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download]()  (coming soon) | 
-|  Prot2Text<sub>MEDIUM</sub>|  398M    |    36.51    |    84.83    | [Download]()  (coming soon) | 
-|  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download]()  (coming soon) | 
+|  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh4KujJfOJ_PxvJog?e=C6x4E6) | 
+|  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh1N1kfnmXBEar-Tw?e=fACWFt) | 
+|  Prot2Text<sub>MEDIUM</sub>|  398M    |    36.51    |    84.83    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh3yPy98rqWfYcTJA?e=ot1SX6) | 
+|  Prot2Text<sub>LARGE</sub> |  898M    |    36.29    |    85.20    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh2EL4iP_IoVKu1tg?e=PioL6B) | 
+|  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh09SfCPl9H-vnBng?e=aw7eqi) | 
 
 #### Protein Description Generation
 To generate the description of a protein using any Prot2Text model (using `--model_path`) you need to specify the protein AlphaFoldDB ID (using `--protein_alphafold_id`) and have an internet connection in order to download the structure:
