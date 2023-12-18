@@ -25,10 +25,11 @@ from transformers.utils import (
 )
     
 class EncoderRGCN(PreTrainedModel):
-    def __init__(self, input_dim, hidden_dim=512, n_layers=6, emb_dim=512, dropout=0.2, num_relation=7):
+    def __init__(self, input_dim, hidden_dim=512, n_layers=6, emb_dim=512, dropout=0.2, num_relation=7, prot2text_version='1.0'):
         super(EncoderRGCN, self).__init__(PretrainedConfig(name='RGCN'))
         self.n_layers = n_layers
         self.output_dim = emb_dim
+        self.prot2text_version = prot2text_version
 
         self.fc0 = nn.Linear(input_dim, hidden_dim)
         self.batchnorm_final = nn.BatchNorm1d(hidden_dim)
@@ -62,7 +63,7 @@ class EncoderRGCN(PreTrainedModel):
         
         for i in range(self.n_layers):
             x = self.conv[i](x, edge_index, edge_type)
-                
+
         out = global_mean_pool(x, batch)
         out = self.relu(self.fc1(out))
         out = self.relu(self.fc2(out))

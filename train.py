@@ -121,6 +121,7 @@ esm_tokenizer = AutoTokenizer.from_pretrained(args.esm_model_path)
 
 config_model = PretrainedConfig(
     _name_or_path='prot2text',
+    prot2text_version: "1.1",
     cross_esm_graph=args.use_plm & args.use_rgcn,
     esm=args.use_plm,
     esm_model_name=args.esm_model_path,
@@ -155,6 +156,7 @@ gpt_config = GPT2Config.from_pretrained(config_model.gpt_model_name,
                                         max_length=256,
                                         min_length=1)
 gpt_config.max_new_tokens = 256
+gpt_config.prot2text_version = config_model.prot2text_version
 config_model.gpt_config = gpt_config.to_dict()
 
 model = Prot2TextModel(config=config_model)

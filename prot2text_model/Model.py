@@ -11,6 +11,7 @@ from transformers.modeling_utils import PreTrainedModel, PretrainedConfig
 from .utils import CABlock, _GPT2LMHeadModel
 import os
 import sys
+import numpy as np
 from transformers.generation.configuration_utils import GenerationConfig
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.stopping_criteria import StoppingCriteriaList
@@ -39,7 +40,7 @@ class Prot2TextModel(PreTrainedModel):
 
         self.gpt_config = GPT2Config.from_dict(config.gpt_config)
         if config.rgcn:
-            self.encoder = EncoderRGCN(input_dim=config.rgcn_input_dim, hidden_dim=self.gpt_config.n_embd, n_layers=config.rgcn_n_layers, emb_dim=self.gpt_config.n_embd)
+            self.encoder = EncoderRGCN(input_dim=config.rgcn_input_dim, hidden_dim=self.gpt_config.n_embd, n_layers=config.rgcn_n_layers, emb_dim=self.gpt_config.n_embd, prot2text_version=self.config.prot2text_version)
 
         self.decoder = _GPT2LMHeadModel(self.gpt_config)
 
@@ -108,12 +109,19 @@ class Prot2TextModel(PreTrainedModel):
 
         if x is not None and self.config.rgcn:
             graph_emb = self.encoder(x, edge_index, edge_type, batch)
+            graph_mask = None
             
         if self.config.esm:
+            if self.config.prot2text_version=='1.0':
+                if encoder_input_ids.size()[1] != 1021:
+                    raise ValueError("For this version of the model you need to PAD/Truncate the amino acid sequence for the ESM model to 1021")
+            
             esm_emb = self.esm(input_ids=encoder_input_ids, attention_mask=attention_mask, return_dict=return_dict).last_hidden_state
             esm_emb = self.to_embedding(esm_emb)
             if not self.config.cross_esm_graph and self.config.rgcn:
-                graph_emb = torch.cat((graph_emb, esm_emb), dim=1) 
+                graph_emb = torch.cat((graph_emb, esm_emb), dim=1)
+                t_add = torch.ones((attention_mask.size(0), 1)).to(attention_mask.get_device())
+                attention_mask = torch.cat((t_add, attention_mask), dim=1) 
             elif self.config.cross_esm_graph and self.config.rgcn:
                 if past_key_values_graph_esm is None:
                     past_length = 0
@@ -131,7 +139,7 @@ class Prot2TextModel(PreTrainedModel):
                         layer_past=layer_past,
                         attention_mask=attention_mask,
                         encoder_hidden_states=graph_emb,
-                        encoder_attention_mask=None,
+                        encoder_attention_mask=graph_mask,
                         use_cache=use_cache,
                         output_attentions=False,
                     )
@@ -142,9 +150,13 @@ class Prot2TextModel(PreTrainedModel):
                 graph_emb = esm_emb
             else:
                 graph_emb = esm_emb
-
+        else:
+            attention_mask = None
+        if self.config.prot2text_version=='1.0':
+            attention_mask = None
         if get_graph_emb:
             return graph_emb
+    
         transformer_outputs = self.decoder(input_ids=decoder_input_ids,
                                             past_key_values=past_key_values,
                                             attention_mask=decoder_attention_mask,
@@ -153,7 +165,7 @@ class Prot2TextModel(PreTrainedModel):
                                             head_mask=head_mask,
                                             inputs_embeds=inputs_embeds,
                                             encoder_hidden_states=graph_emb,
-                                            encoder_attention_mask=encoder_attention_mask,
+                                            encoder_attention_mask=attention_mask,
                                             labels=labels,
                                             use_cache=use_cache,
                                             output_attentions=output_attentions,
@@ -229,7 +241,7 @@ class Prot2TextModel(PreTrainedModel):
             process_filename = '/'.join(process_filename)    
             try:            
                 gpdb = PDB2Graph(root = PATH_TO_DATA, output_folder = OUTPUT_FOLDER, config=config, n_processors=1).create_pyg_graph(structure_filename)
-                seq = esmtokenizer(gpdb.sequence, add_special_tokens=True, truncation=True, max_length=1021, padding='max_length', return_tensors="pt") 
+                seq = esmtokenizer(gpdb.sequence, add_special_tokens=True, truncation=True, max_length=1021, padding='max_length',return_tensors="pt") #
                 torch.save(gpdb, graph_filename)
                 gpdb.edge_type = [np.array(gpdb.edge_type.transpose(0,1))]
                 gpdb.encoder_input_ids = seq['input_ids']
@@ -242,6 +254,7 @@ class Prot2TextModel(PreTrainedModel):
             self.eval()
             inputs = gpdb
             inputs = inputs.to_dict()
+            
             inputs['edge_type'] =  torch.cat([torch.tensor(inputs['edge_type'][i]) for i in range(len(inputs['edge_type']))], dim=0)
             inputs['edge_type'] = torch.argmax(inputs['edge_type'], dim=1)
             for key in ['num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates']:
@@ -251,12 +264,41 @@ class Prot2TextModel(PreTrainedModel):
             inputs["decoder_attention_mask"] = torch.ones(inputs['decoder_input_ids'].shape[0], 1)
             self.to(device)
             inputs = {k: v.to(device=device, non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-            encoder_state = self(**inputs, get_graph_emb=True)
+            encoder_state = dict()
+            encoder_state['hidden_states'] = self(**inputs, get_graph_emb=True, output_attentions=True)
+            encoder_state['attentions'] = inputs['attention_mask']
             for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids']:
                 inputs.pop(key)
-            tok_ids = self.decoder.generate(input_ids=inputs['decoder_input_ids'], encoder_outputs=encoder_state, use_cache=True)#, just_decoder=True)
-            generated = tokenizer.batch_decode(tok_ids, skip_special_tokens=True)
-            
+            tok_ids = self.decoder.generate(input_ids=inputs['decoder_input_ids'], 
+                                            encoder_outputs=encoder_state, 
+                                            use_cache=True, 
+                                            output_attentions=True, 
+                                            output_scores=True, 
+                                            return_dict_in_generate=True, 
+                                            encoder_attention_mask=inputs['attention_mask'], 
+                                            length_penalty=2.0,
+                                            no_repeat_ngram_size=3,
+                                            early_stopping=True,
+                                            num_beams=1)
+
+            generated = tokenizer.batch_decode(tok_ids.get('sequences'), skip_special_tokens=True)
+            print(tok_ids.get('scores')[0].size())
+            m = torch.nn.Softmax()
+            att_w = []
+            print(len(gpdb.sequence[0]))
+            score = 0
+            for i in range(len(tok_ids.get('cross_attentions'))):
+                att_w.append(torch.mul(tok_ids.get('cross_attentions')[i][-1].squeeze().mean(dim=0), inputs['attention_mask'][-1].squeeze())[:len(gpdb.sequence[0])].tolist())
+                score += np.log(torch.max(m(tok_ids.get('scores')[i]).squeeze()).item())
+            score = score / len(tok_ids.get('cross_attentions'))
+            # print(str(score))
+        
+            # import seaborn as sns
+            # import matplotlib.pylab as plt
+            # plt.figure().set_figwidth(150)
+            # ax = sns.heatmap(att_w, cmap="YlGnBu", robust=True, xticklabels=gpdb.sequence[0])#, yticklabels=generated[0])
+            # plt.savefig("seaborn_plot.png")
+
             os.remove(structure_filename)
             os.remove(graph_filename)
             os.remove(process_filename)        
@@ -294,6 +336,10 @@ class Prot2TextModel(PreTrainedModel):
         encoder_state = self(**kwargs, get_graph_emb=True)
         input_ids = kwargs['decoder_input_ids']
         attention_mask = kwargs['decoder_attention_mask']
+        kwargs['encoder_attention_mask'] = kwargs['attention_mask']
+        if not self.config.cross_esm_graph and self.config.rgcn and self.config.esm:
+            t_add = torch.ones((kwargs['encoder_attention_mask'].size(0), 1)).to(kwargs['encoder_attention_mask'].get_device())
+            kwargs['encoder_attention_mask'] = torch.cat((t_add, kwargs['encoder_attention_mask']), dim=1) 
         for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids', 'decoder_input_ids', 'decoder_attention_mask', 'batch', 'attention_mask', 'max_length',
                     'num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates', 'ptr']:
             if key in kwargs.keys():
@@ -306,6 +352,6 @@ class Prot2TextModel(PreTrainedModel):
                                      synced_gpus=synced_gpus,
                                      assistant_model=assistant_model,
                                      streamer=streamer,
-                                     encoder_outputs=encoder_state,
+                                     encoder_outputs={'hidden_states': encoder_state, 'attentions':0},
                                      **kwargs
                                      )
