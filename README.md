@@ -1,4 +1,5 @@
-# Prot2Text
+# Prot2Text: Multimodal Protein’s Function Generation with GNNs and Transformers
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-red.svg)](#python)
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
 
@@ -6,9 +7,13 @@
 [cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
-This repository contains the code to reproduce the results of the paper "Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers" by Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis, accepted at AAAI 2024. [Preprint Link](https://arxiv.org/abs/2307.14367)
+This repository contains the code to reproduce the results of the paper "<strong>Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers</strong>" by <strong>Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis</strong>, accepted at <strong>AAAI 2024</strong>. [Preprint Link](https://arxiv.org/abs/2307.14367)
+
+Preliminary versions of the paper were accepted as a spotlight at [DGM4H@NeurIPS 2023](https://sites.google.com/ethz.ch/dgm4h-neurips2023/home?authuser=0) and [AI4Science@NeurIPS 2023](https://ai4sciencecommunity.github.io/neurips23.html). 
 
 A demo web app for protein description generation could also be tested here [nlp.polytechnique.fr/prot2text](http://nlp.polytechnique.fr/prot2text#proteins).
+
+![](Prot2Text.drawio.png)
 
 ## Setup
 #### Environment Setup
