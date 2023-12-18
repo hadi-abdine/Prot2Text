@@ -39,11 +39,15 @@ class Prot2TextModel(PreTrainedModel):
         super().__init__(config)
 
         self.gpt_config = GPT2Config.from_dict(config.gpt_config)
+        
+        # if we are using RGCN to encode the protein's structure, define the RGCN encoder
         if config.rgcn:
             self.encoder = EncoderRGCN(input_dim=config.rgcn_input_dim, hidden_dim=self.gpt_config.n_embd, n_layers=config.rgcn_n_layers, emb_dim=self.gpt_config.n_embd, prot2text_version=self.config.prot2text_version)
 
+        # define the GPT2 decoder
         self.decoder = _GPT2LMHeadModel(self.gpt_config)
 
+        # if using ESM to encode protein's sequence, define the ESM layer, the Projection layer and the fusion layer
         if config.esm:
             self.esm_config = PretrainedConfig.from_dict(config.esm_config)
             self.esm = transformers.EsmModel(self.esm_config)

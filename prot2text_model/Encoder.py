@@ -25,6 +25,9 @@ from transformers.utils import (
 )
     
 class EncoderRGCN(PreTrainedModel):
+    '''
+    This class implement the RGCN encoder to encode the protein structure
+    '''
     def __init__(self, input_dim, hidden_dim=512, n_layers=6, emb_dim=512, dropout=0.2, num_relation=7, prot2text_version='1.0'):
         super(EncoderRGCN, self).__init__(PretrainedConfig(name='RGCN'))
         self.n_layers = n_layers

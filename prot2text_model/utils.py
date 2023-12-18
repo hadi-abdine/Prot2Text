@@ -21,6 +21,10 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
         self.config = config
     
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, encoder_outputs=None, **kwargs):
+        '''
+        This function is an edited version of the prepare_inputs_for_generation function from HuggingFace's transformers 
+        https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py
+        '''
         token_type_ids = kwargs.get("token_type_ids", None)
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
@@ -74,6 +78,11 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
         streamer: Optional["BaseStreamer"] = None,
         **model_kwargs,
     ) -> Union[GreedySearchOutput, torch.LongTensor]:
+        '''
+        This function is an edited version of the greedy_search function from HuggingFace's transformers 
+        https://github.com/huggingface/transformers/blob/main/src/transformers/generation/utils.py
+        '''
+        
         # init values
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
@@ -241,7 +250,10 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
         synced_gpus: bool = False,
         **model_kwargs,
     ) -> Union[BeamSearchOutput, torch.LongTensor]:
-
+        '''
+        This function is an edited version of the beam_search function from HuggingFace's transformers 
+        https://github.com/huggingface/transformers/blob/main/src/transformers/generation/utils.py
+        '''
         # init values
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
@@ -445,6 +457,10 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
     
 
 class CABlock(nn.Module):
+    '''
+        This function is an edited version of the gpt2 decoder block function from HuggingFace's transformers 
+        https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py
+        '''
     def __init__(self, config, layer_idx=None):
         super().__init__()
         hidden_size = config.hidden_size
@@ -493,6 +509,9 @@ class CABlock(nn.Module):
         return (hidden_states,)
     
 class Prot2TextTrainer(Seq2SeqTrainer):
+    '''
+    This function is an edited version of the Seq2SeqTrainer from HuggingFace's transformers 
+    '''
     def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
         if self.args.world_size > 1:
             eval_sampler = DistributedSampler(self.eval_dataset, num_replicas=self.args.world_size, rank=self.args.process_index)
