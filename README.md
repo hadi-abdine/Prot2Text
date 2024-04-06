@@ -25,7 +25,7 @@ To prepare the environment we need to do the following steps:
 - pytorch: [https://pytorch.org/get-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
 - pytorch-geometric and its optional dependencies: [https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html)
 
-2- Install the DSSP library following the instructions here: [https://ssbio.readthedocs.io/en/latest/instructions/dssp.html](https://ssbio.readthedocs.io/en/latest/instructions/dssp.html)
+2- Install the DSSP library (v3.0.0): [https://anaconda.org/salilab/dssp](https://anaconda.org/salilab/dssp)
 
 3- Install the rest of the requirements:
 ```bash
