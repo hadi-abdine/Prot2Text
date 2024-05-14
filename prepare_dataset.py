@@ -36,6 +36,7 @@ argParser.add_argument("--decoder_model", help="language model to use (from hugg
 
 args = argParser.parse_args()
 
+
 # step 1: download the PDB files from AlphaFoldDB
 isExist = os.path.exists(os.path.join(args.data_save_path, args.split))
 if not isExist:
@@ -69,7 +70,7 @@ else:
                                             partial(add_distance_threshold, 
                                                     long_interaction_threshold=3, 
                                                     threshold=10.),],
-            "graph_metadata_functions":[asa,phi, psi, secondary_structure, rsa],
+            "graph_metadata_functions":[asa, phi, psi, secondary_structure, rsa],
             "dssp_config": DSSPConfig(),}
     config = ProteinGraphConfig(**config)
     PDB2Graph(root = pdb_path, 

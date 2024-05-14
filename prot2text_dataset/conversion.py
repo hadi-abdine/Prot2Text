@@ -14,7 +14,7 @@ import networkx as nx
 import numpy as np
 import torch
 
-from graphein.utils.utils import import_message
+from graphein.utils.dependencies import import_message
 
 try:
     import torch_geometric

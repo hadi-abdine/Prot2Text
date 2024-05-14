@@ -37,7 +37,7 @@ class PDB2Graph():
         self.map_secondary_structure = {'-':0, 'H':1, 'B':2, 'E':3, 'G':4, 'I':5, 'T':6, 'S':7}
         self.init_ohe_edge_type()
         self.config = config
-        self.features = ['phi', 'psi', 'rsa', 'asa', 'ss','expasy']
+        self.features = ['phi', 'psi', 'rsa', 'asa', 'ss', 'expasy']
         self.n_processors = n_processors
         self.raw_dir = root
         self.processed_dir = self._processed_dir()
@@ -63,7 +63,6 @@ class PDB2Graph():
     def create_pyg_graph(self, path_to_structure):
         pyg_graph = convert_nx_to_pyg_data(self.create_nx_graph(path_to_structure))
  
-
         graph = Data(edge_index = pyg_graph.edge_index, 
                     num_nodes = len(pyg_graph.node_id), 
                     node_id = pyg_graph.node_id, 

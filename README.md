@@ -21,15 +21,22 @@ A demo web app for protein description generation could also be tested here [nlp
 The recommended environment is Python >= 3.8 and PyTorch 1.13, although other versions of Python and PyTorch may also work.
 
 To prepare the environment we need to do the following steps:
-1- Install pytorch 1.13.*, pytorch-geometric and its optional dependencies according to your cuda version using the following links:
+1- Install pytorch 1.13.*, pytorch-geometric and its optional dependencies according to your cuda version using the following links (newer versions work):
 - pytorch: [https://pytorch.org/get-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
 - pytorch-geometric and its optional dependencies: [https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html)
 
-2- Install the DSSP library (v3.0.0): [https://anaconda.org/salilab/dssp](https://anaconda.org/salilab/dssp)
+2- Install the DSSP library (v3.0.0): [https://anaconda.org/salilab/dssp](https://anaconda.org/salilab/dssp) or newer [https://ssbio.readthedocs.io/en/latest/instructions/dssp.html](https://ssbio.readthedocs.io/en/latest/instructions/dssp.html) (the experiences in this study were done using dssp v3.0.0)
 
 3- Install the rest of the requirements:
 ```bash
 pip install -r Requirements.txt
+```
+The models are trained and tested using transformers v4.30.1. However, the repo is updated lately to work with transformers v4.40.2 as well.
+
+4- Install graphein library from source or version >1.7.6 (if released):
+```bash
+git clone https://github.com/a-r-j/graphein.git
+pip install -e graphein/
 ```
 
 #### Datasets Preparation
@@ -61,11 +68,13 @@ where:
 
 |  Model                     |  #params |  BLEU Score |  BERT Score |     Link     |
 |:--------------------------:|:--------:|:-----------:|:-----------:|:------------:|
-|  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh4KujJfOJ_PxvJog?e=C6x4E6) | 
-|  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh1N1kfnmXBEar-Tw?e=fACWFt) | 
-|  Prot2Text<sub>MEDIUM</sub>|  398M    |    36.51    |    84.83    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh3yPy98rqWfYcTJA?e=ot1SX6) | 
-|  Prot2Text<sub>LARGE</sub> |  898M    |    36.29    |    85.20    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh2EL4iP_IoVKu1tg?e=PioL6B) | 
-|  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdh09SfCPl9H-vnBng?e=aw7eqi) | 
+|  Prot2Text<sub>SMALL</sub> |  256M    |    30.01    |    82.60    | [Download v1.0](https://1drv.ms/u/s!AhcBGHWGY2muke8KlDdP__DNxHhB1g?e=5HHhtn) [Download v1.1](https://1drv.ms/u/s!AhcBGHWGY2muke5r13_Ew0mP_XkmCw?e=Daud3y) | 
+|  Prot2Text<sub>BASE</sub>  |  283M    |    35.11    |    84.30    | [Download v1.0](https://1drv.ms/u/s!AhcBGHWGY2muke8JOhbc2e4zGCNCiA?e=XGsl7R) [Download v1.1](https://1drv.ms/u/s!AhcBGHWGY2muke5pg1mohZpURZNgSQ?e=53BjOq) | 
+|  Prot2Text<sub>MEDIUM</sub>|  398M    |    36.51    |    84.83    | [Download v1.0](https://1drv.ms/u/s!AhcBGHWGY2muke8LWGEjPfeIb0B-iA?e=4swFgn) [Download v1.1](https://1drv.ms/u/s!AhcBGHWGY2muke5s7RQUW45fK8BAjQ?e=zn7cvn) | 
+|  Prot2Text<sub>LARGE</sub> |  898M    |    36.29    |    85.20    | [Download v1.0](https://1drv.ms/u/s!AhcBGHWGY2muke8MfBS7eC-NOHoKQQ?e=jHU9PT) [Download v1.1](https://1drv.ms/u/s!AhcBGHWGY2muke5tU-jgrZmNpOAXlg?e=p61QAr) | 
+|  Esm2Text<sub>BASE</sub>   |  225M    |    32.11    |    83.21    | [Download v1.0](https://1drv.ms/u/s!AhcBGHWGY2muke8Icx929RSAmsLRNw?e=jxxW3g) [Download v1.1](https://1drv.ms/u/s!AhcBGHWGY2muke5qine4uqzRO_nDAQ?e=TSwrCv) | 
+
+The reported results are computed using v1.0 (from the original paper). v1.1 uses the same architecture, it is only trained with some fixed bugs in the code. It has a similar performance to v1.0.
 
 #### Protein Description Generation
 To generate the description of a protein using any Prot2Text model (using `--model_path`) you need to specify the protein AlphaFoldDB ID (using `--protein_alphafold_id`) and have an internet connection in order to download the structure:

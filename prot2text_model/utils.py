@@ -20,6 +20,7 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
         super(GPT2LMHeadModel, self).init_(config)
         self.config = config
     
+    
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, encoder_outputs=None, **kwargs):
         '''
         This function is an edited version of the prepare_inputs_for_generation function from HuggingFace's transformers 
@@ -61,7 +62,8 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
             "encoder_attention_mask": encoder_attention_mask,
             **model_specific_kwargs
         }
-      
+    
+     
     def greedy_search(
         self,
         input_ids: torch.LongTensor,
@@ -204,8 +206,12 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
                     this_peer_finished = True
 
             # stop if we exceed the maximum length
-            if stopping_criteria(input_ids, scores):
-                this_peer_finished = True
+            try:
+                if stopping_criteria(input_ids, scores):
+                    this_peer_finished = True
+            except:
+                if all(stopping_criteria(input_ids, scores)):
+                    this_peer_finished = True
 
             if this_peer_finished and not synced_gpus:
                 break
@@ -233,6 +239,71 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
                 )
         else:
             return input_ids
+        
+    def _greedy_search(
+        self,
+        input_ids: torch.LongTensor,
+        logits_processor: Optional[LogitsProcessorList] = None,
+        stopping_criteria: Optional[StoppingCriteriaList] = None,
+        max_length: Optional[int] = None,
+        pad_token_id: Optional[int] = None,
+        eos_token_id: Optional[Union[int, List[int]]] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        output_scores: Optional[bool] = None,
+        return_dict_in_generate: Optional[bool] = None,
+        synced_gpus: bool = False,
+        streamer: Optional["BaseStreamer"] = None,
+        **model_kwargs,
+    ) -> Union[GreedySearchOutput, torch.LongTensor]:
+        
+        return self.greedy_search(
+                            input_ids,
+                            logits_processor,
+                            stopping_criteria,
+                            max_length,
+                            pad_token_id,
+                            eos_token_id,
+                            output_attentions,
+                            output_hidden_states,
+                            output_scores,
+                            return_dict_in_generate,
+                            synced_gpus,
+                            streamer,
+                            **model_kwargs,
+                            )
+    def _beam_search(
+        self,
+        input_ids: torch.LongTensor,
+        beam_scorer: BeamScorer,
+        logits_processor: Optional[LogitsProcessorList] = None,
+        stopping_criteria: Optional[StoppingCriteriaList] = None,
+        max_length: Optional[int] = None,
+        pad_token_id: Optional[int] = None,
+        eos_token_id: Optional[Union[int, List[int]]] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        output_scores: Optional[bool] = None,
+        return_dict_in_generate: Optional[bool] = None,
+        synced_gpus: bool = False,
+        **model_kwargs,
+    ) -> Union[BeamSearchOutput, torch.LongTensor]:
+        
+        return self.beam_search(
+                input_ids,
+                beam_scorer,
+                logits_processor,
+                stopping_criteria,
+                max_length,
+                pad_token_id,
+                eos_token_id,
+                output_attentions,
+                output_hidden_states,
+                output_scores,
+                return_dict_in_generate,
+                synced_gpus,
+                **model_kwargs,
+            )
         
     def beam_search(
         self,
@@ -343,13 +414,16 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
             next_token_logits = outputs.logits[:, -1, :]
             # hack: adjust tokens for Marian. For Marian we have to make sure that the `pad_token_id`
             # cannot be generated both before and after the `nn.functional.log_softmax` operation.
-            next_token_logits = self.adjust_logits_during_generation(next_token_logits, cur_len=cur_len)
+            # next_token_logits = self.adjust_logits_during_generation(next_token_logits, cur_len=cur_len)
             next_token_scores = nn.functional.log_softmax(
                 next_token_logits, dim=-1
             )  # (batch_size * num_beams, vocab_size)
 
             next_token_scores_processed = logits_processor(input_ids, next_token_scores)
-            next_token_scores = next_token_scores_processed + beam_scores[:, None].expand_as(next_token_scores)
+            # next_token_scores = next_token_scores_processed + beam_scores[:, None].expand_as(next_token_scores)
+            next_token_scores = next_token_scores_processed + beam_scores[:, None].expand_as(
+                next_token_scores_processed
+            )
 
             # Store scores, attentions and hidden_states when required
             if return_dict_in_generate:
@@ -372,6 +446,8 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
             # reshape for beam search
             vocab_size = next_token_scores.shape[-1]
             next_token_scores = next_token_scores.view(batch_size, num_beams * vocab_size)
+
+                
 
             # Sample 2 next tokens for each beam (so we have some spare tokens and match output of beam search)
             next_token_scores, next_tokens = torch.topk(
@@ -410,11 +486,19 @@ class _GPT2LMHeadModel(GPT2LMHeadModel):
             # increase cur_len
             cur_len = cur_len + 1
 
-            if beam_scorer.is_done or stopping_criteria(input_ids, scores):
-                if not synced_gpus:
-                    break
-                else:
-                    this_peer_finished = True
+            try:
+                if beam_scorer.is_done or stopping_criteria(input_ids, scores):
+                    if not synced_gpus:
+                        break
+                    else:
+                        this_peer_finished = True
+            except:
+                if beam_scorer.is_done or all(stopping_criteria(input_ids, scores)):
+                    if not synced_gpus:
+                        break
+                    else:
+                        this_peer_finished = True
+                
 
         sequence_outputs = beam_scorer.finalize(
             input_ids,

@@ -216,7 +216,7 @@ class Prot2TextModel(PreTrainedModel):
                                                     add_hydrogen_bond_interactions,
                                                     partial(add_distance_threshold, long_interaction_threshold=3, threshold=10.),],
                     "graph_metadata_functions":[asa,phi, psi, secondary_structure, rsa],
-                    "dssp_config": DSSPConfig(),}
+                    "dssp_config": DSSPConfig()}
             config = ProteinGraphConfig(**config)
 
             PATH_TO_DATA = f"./.tmp/pdb/pdb"
@@ -280,9 +280,9 @@ class Prot2TextModel(PreTrainedModel):
                                             output_scores=True, 
                                             return_dict_in_generate=True, 
                                             encoder_attention_mask=inputs['attention_mask'], 
-                                            length_penalty=2.0,
-                                            no_repeat_ngram_size=3,
-                                            early_stopping=True,
+                                            length_penalty=1.0,
+                                            no_repeat_ngram_size=None,
+                                            early_stopping=False,
                                             num_beams=1)
 
             generated = tokenizer.batch_decode(tok_ids.get('sequences'), skip_special_tokens=True)
@@ -319,7 +319,8 @@ class Prot2TextModel(PreTrainedModel):
             
             self.to(device)
             inputs = {k: v.to(device=device, non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-            encoder_state = self(**inputs, get_graph_emb=True)
+            encoder_state = dict()
+            encoder_state['hidden_states'] = self(**inputs, get_graph_emb=True, output_attentions=True)
             generated = tokenizer.batch_decode(self.decoder.generate(input_ids=inputs['decoder_input_ids'], encoder_outputs=encoder_state, use_cache=True), skip_special_tokens=True)
             
             return generated[0].replace('<|stop_token|>', '').replace('<|graph_token|>', '')
@@ -336,7 +337,6 @@ class Prot2TextModel(PreTrainedModel):
                 streamer: Optional["BaseStreamer"] = None,
                 **kwargs,
             ):
-
         encoder_state = self(**kwargs, get_graph_emb=True)
         input_ids = kwargs['decoder_input_ids']
         attention_mask = kwargs['decoder_attention_mask']
@@ -345,7 +345,7 @@ class Prot2TextModel(PreTrainedModel):
             t_add = torch.ones((kwargs['encoder_attention_mask'].size(0), 1)).to(kwargs['encoder_attention_mask'].get_device())
             kwargs['encoder_attention_mask'] = torch.cat((t_add, kwargs['encoder_attention_mask']), dim=1) 
         for key in ['edge_index', 'edge_type', 'x', 'encoder_input_ids', 'decoder_input_ids', 'decoder_attention_mask', 'batch', 'attention_mask', 'max_length',
-                    'num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates', 'ptr']:
+                    '_num_nodes', 'node_id', 'name', 'sequence', 'distance_matrix', 'distance', 'coordinates', 'ptr', 'num_nodes',]:
             if key in kwargs.keys():
                 kwargs.pop(key)
         return self.decoder.generate(input_ids=input_ids,

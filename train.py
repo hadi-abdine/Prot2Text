@@ -12,8 +12,7 @@ from prot2text_model.Model import Prot2TextModel
 from prot2text_model.tokenization_prot2text import Prot2TextTokenizer
 import torch.nn as nn
 from transformers import EvalPrediction, Seq2SeqTrainingArguments
-from transformers.trainer_utils import EvaluationStrategy, HubStrategy, IntervalStrategy, SchedulerType, ShardedDDPOption
-from transformers.deepspeed import is_deepspeed_zero3_enabled
+from transformers.trainer_utils import EvaluationStrategy, HubStrategy, IntervalStrategy, SchedulerType
 import evaluate
 from torch.utils.data.distributed import DistributedSampler
 from torch_geometric.data import Dataset, download_url
@@ -22,7 +21,6 @@ from torch_geometric.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 import pandas as pd
-from transformers.deepspeed import is_deepspeed_zero3_enabled
 from transformers.trainer_utils import PredictionOutput
 from transformers.utils import logging
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP
@@ -109,7 +107,7 @@ model_name = args.decoder_path
 tokenizer = Prot2TextTokenizer.from_pretrained(model_name)
 SPECIAL_TOKEN = '<|graph_token|>'
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.pad_token = 50256
+tokenizer.pad_token = "<|endoftext|>"
 tokenizer.add_tokens([SPECIAL_TOKEN])
 SPECIAL_TOKEN = '<|stop_token|>'
 tokenizer.add_tokens([SPECIAL_TOKEN])
@@ -121,7 +119,7 @@ esm_tokenizer = AutoTokenizer.from_pretrained(args.esm_model_path)
 
 config_model = PretrainedConfig(
     _name_or_path='prot2text',
-    prot2text_version: "1.1",
+    prot2text_version="1.1",
     cross_esm_graph=args.use_plm & args.use_rgcn,
     esm=args.use_plm,
     esm_model_name=args.esm_model_path,
@@ -182,11 +180,11 @@ eval_dataset = Prot2TextDataset(root=args.data_path,
                                 esmtokenizer=esm_tokenizer)
 print('eval set loaded')
 
-num_gpus = args.nb_gpus
+num_gpus = int(args.nb_gpus)
 train_size = len(train_dataset)
-num_epochs = args.nb_epochs
-grad_accumulation = args.gradient_accumulation
-batch_size = args.batch_per_device
+num_epochs = int(args.nb_epochs)
+grad_accumulation = int(args.gradient_accumulation)
+batch_size = int(args.batch_per_device)
 warmup = 0.06 * num_epochs * train_size / (num_gpus * batch_size * grad_accumulation)
 model_save_name = args.save_model_path
 lr = args.lr

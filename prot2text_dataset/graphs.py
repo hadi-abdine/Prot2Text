@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import networkx as nx
 import numpy as np
 import pandas as pd
-from Bio.PDB.Polypeptide import three_to_one
+# from Bio.PDB.Polypeptide import three_to_one
 from biopandas.pdb import PandasPdb
 from biopandas.mmcif import PandasMmcif
 from rich.progress import Progress
@@ -732,6 +732,7 @@ def construct_graph(
         g = add_nodes_to_graph(g)
         # Add config to graph
         g.graph["config"] = config
+        g.graph["path"] = g.graph["pdb_path"]
 
         # Annotate additional node metadata
         if config.node_metadata_functions is not None:
@@ -747,6 +748,7 @@ def construct_graph(
         progress.advance(task4)
 
     # Annotate additional graph metadata
+    # print(g.graph['dssp_df'])
     if config.graph_metadata_functions is not None:
         g = annotate_graph_metadata(g, config.graph_metadata_functions)
 

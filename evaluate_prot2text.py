@@ -82,7 +82,11 @@ for inputs in tqdm(d):
     inputs['decoder_input_ids'] = inputs['decoder_input_ids'][:,0:1]
     inputs["decoder_attention_mask"] = torch.ones(inputs['decoder_input_ids'].shape[0], 1)
     inputs = {k: v.to(device=torch.cuda.current_device(), non_blocking=True) if hasattr(v, 'to') else v for k, v in inputs.items()}
-    tok_ids = model.generate(inputs=None, **inputs)
+    tok_ids = model.generate(inputs=None, **inputs,
+                             num_beams=1,
+                            early_stopping=False,
+                            no_repeat_ngram_size=None,
+                            length_penalty=1.0)
     generated += tokenizer.batch_decode(tok_ids, skip_special_tokens=True)
 
 data= {'name':names, 'generated': generated, 'function':functions}
