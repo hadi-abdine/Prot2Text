@@ -42,9 +42,9 @@ pip install -e graphein/
 #### Datasets Preparation
 |   Dataset   |  Size   |     Link     |
 |:-----------:|:-------:|:------------:|
-|  Train      | 248 315 | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJswGT00GA0GnGjkA?e=VVf5xv) | 
-|  Validation |  4 172  | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJtAemPRrPipxX-tg?e=IHvJYd) | 
-| Test        |  4 203  | [Download](https://1drv.ms/u/s!AhcBGHWGY2mukdJrPdyteHb4LX3HjA?e=SH3UUa) |
+|  Train      | 248 315 | [Download](https://onedrive.live.com/download?resid=AE69638675180117%21289132&authkey=!AJwOr_jkRNBGiHY) | 
+|  Validation |  4 172  | [Download](https://onedrive.live.com/download?resid=AE69638675180117%21289133&authkey=!ACVYLi69iXMJJ40) | 
+| Test        |  4 203  | [Download](https://onedrive.live.com/download?resid=AE69638675180117%21289131&authkey=!AJweQhKxhF7lddw) |
 
 After downloading the CSV file for each split, the PDB files will be downloaded from AlphaFoldDB and then preprocessed to extract the graph, the tokenized amino-acid sequence and the tokenized protein description for each PDB file.
 Example for the test split:
