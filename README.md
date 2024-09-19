@@ -7,6 +7,8 @@
 [cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
+** Prot2Text is now on [HuggingFace](https://huggingface.co/collections/habdine/prot2text-suite-66e48fe3596fcff3e41be4e7) **
+
 This repository contains the code to reproduce the results of the paper "<strong>Prot2Text: Multimodal Protein's Function Generation with GNNs and Transformers</strong>" by <strong>Hadi Abdine, Michail Chatzianastasis, Costas Bouyioukos and Michalis Vazirgiannis</strong>, accepted at <strong>AAAI 2024</strong>. [Preprint Link](https://arxiv.org/abs/2307.14367)
 
 Preliminary versions of the paper were accepted as a spotlight at [DGM4H@NeurIPS 2023](https://sites.google.com/ethz.ch/dgm4h-neurips2023/home?authuser=0) and [AI4Science@NeurIPS 2023](https://ai4sciencecommunity.github.io/neurips23.html). 
